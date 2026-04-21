@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana/pkg/tsdb/jaeger/types"
+	"github.com/grafana/grafana-jaeger-datasource/pkg/jaeger/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,15 +60,12 @@ func TestDataSourceInstanceSettings_TraceIdTimeEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create instance settings
 			settings := backend.DataSourceInstanceSettings{
 				JSONData: []byte(tt.jsonData),
 				URL:      "http://localhost:16686",
 			}
 
-			// Create instance factory
-			factory := newInstanceSettings(httpclient.NewProvider())
-			instance, err := factory(context.Background(), settings)
+			instance, err := NewDatasource(context.Background(), settings)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -79,15 +75,12 @@ func TestDataSourceInstanceSettings_TraceIdTimeEnabled(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, instance)
 
-			// Get the datasource info
-			dsInfo, ok := instance.(*datasourceInfo)
+			ds, ok := instance.(*DataSource)
 			require.True(t, ok)
-			require.NotNil(t, dsInfo)
-
-			// Verify the client's traceIdTimeEnabled parameter
+			require.NotNil(t, ds)
 
 			var jsonData types.SettingsJSONData
-			if err := json.Unmarshal(dsInfo.JaegerClient.settings.JSONData, &jsonData); err != nil {
+			if err := json.Unmarshal(ds.JaegerClient.settings.JSONData, &jsonData); err != nil {
 				t.Fatalf("failed to parse settings JSON data: %v", err)
 			}
 

@@ -12,7 +12,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana/pkg/tsdb/jaeger/types"
+	"github.com/grafana/grafana-jaeger-datasource/pkg/jaeger/types"
 )
 
 func TransformSearchResponse(response []types.TraceResponse, dsUID string, dsName string) *data.Frame {

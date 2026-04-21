@@ -2,7 +2,6 @@ package jaeger
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -10,26 +9,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-func (s *Service) registerResourceRoutes() *http.ServeMux {
+func (ds *DataSource) registerResourceRoutes() *http.ServeMux {
 	router := http.NewServeMux()
-	router.HandleFunc("GET /services", s.withDatasourceHandlerFunc(getServicesHandler))
-	router.HandleFunc("GET /services/{service}/operations", s.withDatasourceHandlerFunc(getOperationsHandler))
+	router.HandleFunc("GET /services", ds.getServicesHandler())
+	router.HandleFunc("GET /services/{service}/operations", ds.getOperationsHandler())
 	return router
 }
 
-func (s *Service) withDatasourceHandlerFunc(getHandler func(d *datasourceInfo) http.HandlerFunc) func(rw http.ResponseWriter, r *http.Request) {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		client, err := s.getDSInfo(r.Context(), backend.PluginConfigFromContext(r.Context()))
-		if err != nil {
-			writeResponse(nil, errors.New("error getting data source information from context"), rw, client.JaegerClient.logger)
-			return
-		}
-		h := getHandler(client)
-		h.ServeHTTP(rw, r)
-	}
-}
-
-func getServicesHandler(ds *datasourceInfo) http.HandlerFunc {
+func (ds *DataSource) getServicesHandler() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		cfg := backend.GrafanaConfigFromContext(ctx)
@@ -44,7 +31,7 @@ func getServicesHandler(ds *datasourceInfo) http.HandlerFunc {
 	}
 }
 
-func getOperationsHandler(ds *datasourceInfo) http.HandlerFunc {
+func (ds *DataSource) getOperationsHandler() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		cfg := backend.GrafanaConfigFromContext(ctx)

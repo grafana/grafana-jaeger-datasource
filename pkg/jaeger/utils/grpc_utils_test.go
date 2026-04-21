@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental"
-	"github.com/grafana/grafana/pkg/tsdb/jaeger/types"
+	"github.com/grafana/grafana-jaeger-datasource/pkg/jaeger/types"
 	"github.com/stretchr/testify/assert"
 )
 

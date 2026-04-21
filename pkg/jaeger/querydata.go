@@ -8,7 +8,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana/pkg/tsdb/jaeger/types"
+	"github.com/grafana/grafana-jaeger-datasource/pkg/jaeger/types"
 )
 
 type JaegerQuery struct {
@@ -22,9 +22,9 @@ type JaegerQuery struct {
 	Limit       int    `json:"limit"`
 }
 
-func queryData(ctx context.Context, dsInfo *datasourceInfo, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func queryData(ctx context.Context, ds *DataSource, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	response := backend.NewQueryDataResponse()
-	logger := dsInfo.JaegerClient.logger.FromContext(ctx)
+	logger := ds.JaegerClient.logger.FromContext(ctx)
 
 	for _, q := range req.Queries {
 		var query JaegerQuery
@@ -51,7 +51,7 @@ func queryData(ctx context.Context, dsInfo *datasourceInfo, req *backend.QueryDa
 		// Handle "Search" query type
 		if query.QueryType == "search" {
 			// TODO: enable routing to gRPC when ready, currently pending on: https://github.com/jaegertracing/jaeger/issues/7594
-			frames, err := dsInfo.JaegerClient.Search(ctx, &query, q.TimeRange.From.UnixMicro(), q.TimeRange.To.UnixMicro())
+			frames, err := ds.JaegerClient.Search(ctx, &query, q.TimeRange.From.UnixMicro(), q.TimeRange.To.UnixMicro())
 			if err != nil {
 				response.Responses[q.RefID] = backend.ErrorResponseWithErrorSource(err)
 				continue
@@ -66,9 +66,9 @@ func queryData(ctx context.Context, dsInfo *datasourceInfo, req *backend.QueryDa
 			var frame *data.Frame
 			var err error
 			if useGrpc {
-				frame, err = dsInfo.JaegerClient.GrpcTrace(ctx, query.Query, q.TimeRange.From, q.TimeRange.To, q.RefID)
+				frame, err = ds.JaegerClient.GrpcTrace(ctx, query.Query, q.TimeRange.From, q.TimeRange.To, q.RefID)
 			} else {
-				frame, err = dsInfo.JaegerClient.Trace(ctx, query.Query, q.TimeRange.From.UnixMilli(), q.TimeRange.To.UnixMilli(), q.RefID)
+				frame, err = ds.JaegerClient.Trace(ctx, query.Query, q.TimeRange.From.UnixMilli(), q.TimeRange.To.UnixMilli(), q.RefID)
 			}
 			if err != nil {
 				response.Responses[q.RefID] = backend.ErrorResponseWithErrorSource(err)
@@ -81,7 +81,7 @@ func queryData(ctx context.Context, dsInfo *datasourceInfo, req *backend.QueryDa
 
 		if query.QueryType == "dependencyGraph" {
 			// TODO: enable routing to gRPC when ready, currently pending on: https://github.com/jaegertracing/jaeger/issues/7595
-			dependencies, err := dsInfo.JaegerClient.Dependencies(ctx, q.TimeRange.From.UnixMilli(), q.TimeRange.To.UnixMilli())
+			dependencies, err := ds.JaegerClient.Dependencies(ctx, q.TimeRange.From.UnixMilli(), q.TimeRange.To.UnixMilli())
 			if err != nil {
 				response.Responses[q.RefID] = backend.ErrorResponseWithErrorSource(err)
 				continue
