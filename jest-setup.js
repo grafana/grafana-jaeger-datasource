@@ -1,3 +1,4 @@
+import React from 'react';
 import './.config/jest-setup';
 import { matchers } from './src/test/matchers';
 
