@@ -72,7 +72,7 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@emotion/css": "11.10.6",
+    "@emotion/css": "11.13.5",
     "@grafana/data": "^13.1.0-24716567714",
     "@grafana/e2e-selectors": "^13.1.0-24716567714",
     "@grafana/i18n": "^13.1.0-24716567714",
