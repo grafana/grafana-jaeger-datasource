@@ -3,7 +3,7 @@ module github.com/grafana/grafana-jaeger-datasource
 go 1.25.7
 
 require (
-	github.com/andybalholm/brotli v1.2.0
+	github.com/andybalholm/brotli v1.2.1
 	github.com/go-logfmt/logfmt v0.6.1
 	github.com/grafana/grafana-plugin-sdk-go v0.291.1
 	github.com/stretchr/testify v1.11.1
@@ -96,4 +96,3 @@ require (
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
