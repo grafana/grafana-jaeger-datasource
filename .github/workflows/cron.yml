@@ -7,7 +7,7 @@ on:
 
 jobs:
   playwright-cloud:
-    uses: grafana/data-sources-ci-workflows/.github/workflows/playwright-cloud.yml@main
+    uses: grafana/data-sources-ci-workflows/.github/workflows/playwright-cloud.yml@8941e109ac1a2fe6c41936f1221693e6ee67ad4b # main
     secrets: inherit
     with:
       repo-secrets: |
