@@ -26,6 +26,10 @@ export interface JaegerJsonData extends DataSourceJsonData {
 
 export class JaegerDatasource extends DataSourceWithBackend<JaegerQuery, JaegerJsonData> {
   uploadedJson: string | ArrayBuffer | null = null;
+
+  setUploadedJson(value: string | ArrayBuffer | null) {
+    this.uploadedJson = value;
+  }
   nodeGraph?: NodeGraphOptions;
   traceIdTimeParams?: TraceIdTimeParamsOptions;
   spanBar?: SpanBarOptions;

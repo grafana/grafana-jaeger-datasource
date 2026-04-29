@@ -62,7 +62,7 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
           <FileDropzone
             options={{ multiple: false }}
             onLoad={(result) => {
-              datasource.uploadedJson = result;
+              datasource.setUploadedJson(result);
               onChange({
                 ...query,
                 queryType: 'upload',
