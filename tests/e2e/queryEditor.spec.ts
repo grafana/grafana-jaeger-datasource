@@ -1,7 +1,7 @@
 import { test, expect, type ExplorePage } from '@grafana/plugin-e2e';
 
 const DS_UID = 'jaeger';
-const DS_TYPE = 'grafana-jaeger-datasource';
+const DS_TYPE = 'jaeger';
 
 function exploreUrl(uid: string, query: Record<string, unknown> = {}): string {
   const panes = JSON.stringify({
