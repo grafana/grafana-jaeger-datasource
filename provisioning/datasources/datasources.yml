@@ -2,7 +2,9 @@ apiVersion: 1
 
 datasources:
   - name: 'jaeger'
-    type: 'grafana-jaeger-datasource'
+    uid: 'jaeger'
+    type: 'jaeger'
+    url: 'http://jaeger:16686'
     access: proxy
     isDefault: false
     orgId: 1

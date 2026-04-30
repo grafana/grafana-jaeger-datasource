@@ -1,0 +1,17 @@
+name: Scheduled Cloud end-to-end tests
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  playwright-cloud:
+    uses: grafana/data-sources-ci-workflows/.github/workflows/playwright-cloud.yml@main
+    secrets: inherit
+    with:
+      repo-secrets: |
+        DS_INSTANCE_HOST=jaeger/instance:host
+        DS_INSTANCE_PASSWORD=jaeger/instance:password
+        DS_INSTANCE_PORT=jaeger/instance:port
+        DS_INSTANCE_USERNAME=jaeger/instance:username

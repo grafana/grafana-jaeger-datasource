@@ -21,6 +21,8 @@ export default defineConfig<PluginOptions>({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
+  /* Limit local workers to avoid overwhelming Grafana with concurrent datasource creation */
+  workers: process.env.CI ? undefined : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -45,7 +47,7 @@ export default defineConfig<PluginOptions>({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/admin.json',
+        storageState: `playwright/.auth/${process.env.GRAFANA_ADMIN_USER || 'admin'}.json`,
       },
       dependencies: ['auth'],
     },
