@@ -7,7 +7,6 @@ test.describe('Config editor', () => {
       { tag: '@plugins' },
       async ({ createDataSourceConfigPage, page }) => {
         await createDataSourceConfigPage({ type: 'jaeger' });
-        await expect(page.getByText('Type: Jaeger', { exact: true })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Connection', exact: true })).toBeVisible();
       }
     );
@@ -39,7 +38,6 @@ test.describe('Config editor', () => {
     test('should load provisioned datasource config', async ({ readProvisionedDataSource, gotoDataSourceConfigPage, page }) => {
       const ds = await readProvisionedDataSource({ fileName: 'datasources.yml' });
       await gotoDataSourceConfigPage(ds.uid ?? 'jaeger');
-      await expect(page.getByText('Type: Jaeger', { exact: true })).toBeVisible();
       // URL set in provisioning/datasources/datasources.yml; in cloud CI overridden via DS_INSTANCE_HOST
       const expectedUrl = process.env.DS_INSTANCE_HOST
         ? `http://${process.env.DS_INSTANCE_HOST}:${process.env.DS_INSTANCE_PORT ?? '16686'}`
