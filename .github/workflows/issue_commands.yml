@@ -15,8 +15,20 @@ jobs:
           persist-credentials: false
       - name: Install Actions
         run: npm install --production --prefix ./actions
+
+      # give issue-openers a chance to add labels after submit
+      - name: Sleep for 2 minutes
+        run: sleep 2m
+        shell: bash
+
+      - name: Get GitHub App token
+        id: get-github-app-token
+        uses: grafana/shared-workflows/actions/create-github-app-token@259ba21cb3ff07724f331e26d926d655d24b317b # create-github-app-token/v0.2.3
+        with:
+          github_app: grafana-oss-big-tent
+
       - name: Run Commands
         uses: ./actions/commands
         with:
-          token: ${{secrets.ISSUE_COMMANDS_TOKEN}}
+          token: ${{ steps.get-github-app-token.outputs.token }}
           configPath: issue_commands
