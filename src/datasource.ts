@@ -141,7 +141,7 @@ const emptyTraceDataFrame = new MutableDataFrame({
   },
 });
 
-export function addNodeGraphFramesToResponse(response: DataQueryResponse): DataQueryResponse {
+function addNodeGraphFramesToResponse(response: DataQueryResponse): DataQueryResponse {
   if (!response.data || response.data.length === 0) {
     return response;
   }

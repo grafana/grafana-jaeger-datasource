@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 func (ds *DataSource) registerResourceRoutes() *http.ServeMux {
@@ -19,7 +19,7 @@ func (ds *DataSource) registerResourceRoutes() *http.ServeMux {
 func (ds *DataSource) getServicesHandler() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		cfg := backend.GrafanaConfigFromContext(ctx)
+		cfg := config.GrafanaConfigFromContext(ctx)
 		var services []string
 		var err error
 		if cfg.FeatureToggles().IsEnabled("jaegerEnableGrpcEndpoint") {
@@ -34,7 +34,7 @@ func (ds *DataSource) getServicesHandler() http.HandlerFunc {
 func (ds *DataSource) getOperationsHandler() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		cfg := backend.GrafanaConfigFromContext(ctx)
+		cfg := config.GrafanaConfigFromContext(ctx)
 		service := strings.TrimSpace(r.PathValue("service"))
 		var operations []string
 		var err error

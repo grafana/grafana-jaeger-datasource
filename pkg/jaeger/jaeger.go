@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 var logger = backend.NewLoggerWith("logger", "tsdb.jaeger")
@@ -55,7 +56,7 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 }
 
 func (ds *DataSource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	cfg := backend.GrafanaConfigFromContext(ctx)
+	cfg := config.GrafanaConfigFromContext(ctx)
 
 	var servicesErr error
 	if cfg.FeatureToggles().IsEnabled("jaegerEnableGrpcEndpoint") {
