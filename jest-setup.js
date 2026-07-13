@@ -1,6 +1,4 @@
-import React from 'react';
 import './.config/jest-setup';
-import { matchers } from './src/test/matchers';
 
 const mockIntersectionObserver = jest.fn().mockImplementation((callback) => ({
   observe: jest.fn().mockImplementation((elem) => {
@@ -16,5 +14,3 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 }));
-
-expect.extend(matchers);
