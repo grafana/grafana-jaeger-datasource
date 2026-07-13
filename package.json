@@ -86,7 +86,7 @@
     "rxjs": "7.8.2",
     "stream-browserify": "3.0.0"
   },
-  "packageManager": "npm@11.18.0",
+  "packageManager": "npm@12.0.1",
   "overrides": {
     "ajv-keywords": {
       "ajv": "8.20.0"
