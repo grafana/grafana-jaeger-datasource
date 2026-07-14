@@ -31,7 +31,7 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grafana/otel-profiling-go v0.6.0 // indirect
-	github.com/grafana/pyroscope-go/godeltaprof v0.1.11 // indirect
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.12 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
@@ -40,8 +40,8 @@ require (
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/jaegertracing/jaeger-idl v0.9.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
-	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/klauspost/compress v1.19.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/magefile/mage v1.17.2 // indirect
 	github.com/mattetti/filebuffer v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
@@ -60,12 +60,12 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.67.5 // indirect
-	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/prometheus/common v0.70.0 // indirect
+	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
-	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
+	github.com/unknwon/log v0.0.0-20200308114134-929b1006e34a // indirect
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -80,13 +80,12 @@ require (
 	go.opentelemetry.io/otel/sdk v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	google.golang.org/genproto v0.0.0-20210630183607-d20f26d13c79 // indirect
-	google.golang.org/grpc v1.81.1 // indirect
+	google.golang.org/grpc v1.82.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
