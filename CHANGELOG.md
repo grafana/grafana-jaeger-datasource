@@ -1,5 +1,9 @@
 # Changelog
 
+## 13.0.3
+
+- ⚙️ Chore: Update dependencies
+
 ## 13.0.2
 
 - Bump go v1.26.7 and grafana-plugin-sdk-go v0.296.4 ([#70](https://github.com/grafana/grafana-jaeger-datasource/pull/70))
