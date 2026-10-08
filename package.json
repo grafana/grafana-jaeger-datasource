@@ -1,6 +1,6 @@
 {
   "name": "jaeger",
-  "version": "13.0.4",
+  "version": "13.0.5",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --env production",
     "dev": "webpack -w -c ./webpack.config.ts --env development",
@@ -90,6 +90,7 @@
   "overrides": {
     "ajv-keywords": {
       "ajv": "8.20.0"
-    }
+    },
+    "basic-ftp": "^6.2.1"
   }
 }
