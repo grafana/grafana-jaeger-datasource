@@ -91,6 +91,7 @@
     "ajv-keywords": {
       "ajv": "8.20.0"
     },
-    "basic-ftp": "^6.2.1"
+    "basic-ftp": "^6.2.1",
+    "fast-uri": "4.1.5"
   }
 }
