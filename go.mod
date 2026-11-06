@@ -5,7 +5,8 @@ go 1.27.3
 require (
 	github.com/andybalholm/brotli v1.2.7
 	github.com/go-logfmt/logfmt v0.6.1
-	github.com/grafana/grafana-plugin-sdk-go v0.297.0
+	github.com/grafana/grafana-plugin-sdk-go v0.298.0
+	github.com/magefile/mage v1.17.2
 	github.com/stretchr/testify v1.12.1
 )
 
@@ -41,7 +42,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
-	github.com/magefile/mage v1.17.2 // indirect
 	github.com/mattetti/filebuffer v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
@@ -81,7 +81,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261019180522-ce908d29299b // indirect
