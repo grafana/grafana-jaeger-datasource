@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.0.8
+
+- Fix a connection freeze between Grafana and the plugin under heavy query load by updating google.golang.org/grpc to v1.85.0 ([grpc/grpc-go#9330](https://github.com/grpc/grpc-go/issues/9330))
+- Fix security vulnerabilities (GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr, CVE-2026-93749, CVE-2023-54404)
+
+## 13.0.7
+
+- Chore: Update dependencies
+
 ## 13.0.6
 
 - Chore: Pin golangci-lint to 2.15.0 in development dependencies and CI/CD pipelines
@@ -14,7 +23,7 @@
 
 ## 13.0.3
 
-- ⚙️ Chore: Update dependencies
+- Chore: Update dependencies
 
 ## 13.0.2
 
