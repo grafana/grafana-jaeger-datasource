@@ -17,7 +17,7 @@
   "license": "AGPL-3.0",
   "devDependencies": {
     "@grafana/eslint-config": "9.0.0",
-    "@grafana/plugin-e2e": "3.15.4",
+    "@grafana/plugin-e2e": "4.0.0",
     "@grafana/sign-plugin": "4.0.0",
     "@grafana/tsconfig": "2.2.0",
     "@playwright/test": "1.65.0",
