@@ -3,7 +3,7 @@ module github.com/grafana/grafana-jaeger-datasource
 go 1.27.3
 
 require (
-	github.com/andybalholm/brotli v1.2.8
+	github.com/andybalholm/brotli v1.3.0
 	github.com/go-logfmt/logfmt v0.6.1
 	github.com/grafana/grafana-plugin-sdk-go v0.299.0
 	github.com/magefile/mage v1.17.2
