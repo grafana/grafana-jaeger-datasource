@@ -47,66 +47,57 @@ func TransformGrpcSearchResponse(response types.GrpcTracesResult, dsUID string, 
 		PreferredVisualization: "table",
 	}
 
-	// Sort traces by start time in descending order (newest first)
-	resourceSpans := response.ResourceSpans
-	sort.Slice(resourceSpans, func(i, j int) bool {
-		rootSpanI := resourceSpans[i].ScopeSpans[0].Spans[0]
-		rootSpanJ := resourceSpans[j].ScopeSpans[0].Spans[0]
-
-		for _, scopeSpan := range resourceSpans[i].ScopeSpans {
+	// A trace's spans can arrive in several resourceSpans (one per service), so group
+	// them by trace ID and take the earliest span as the root, as the v1 search does.
+	type traceRow struct {
+		traceID     string
+		serviceName string
+		root        types.GrpcSpan
+		rootStart   int64
+	}
+	rowsByID := map[string]*traceRow{}
+	for _, res := range response.ResourceSpans {
+		serviceName := getAttribute(res.Resource.Attributes, "service.name").StringValue
+		for _, scopeSpan := range res.ScopeSpans {
 			for _, span := range scopeSpan.Spans {
-				if span.StartTimeUnixNano < rootSpanI.StartTimeUnixNano {
-					rootSpanI = span
+				start, err := strconv.ParseInt(span.StartTimeUnixNano, 10, 64)
+				if err != nil {
+					continue
+				}
+				row, ok := rowsByID[span.TraceID]
+				if !ok || start < row.rootStart {
+					rowsByID[span.TraceID] = &traceRow{traceID: span.TraceID, serviceName: serviceName, root: span, rootStart: start}
 				}
 			}
 		}
+	}
 
-		for _, scopeSpan := range resourceSpans[j].ScopeSpans {
-			for _, span := range scopeSpan.Spans {
-				if span.StartTimeUnixNano < rootSpanJ.StartTimeUnixNano {
-					rootSpanJ = span
-				}
-			}
+	rows := make([]*traceRow, 0, len(rowsByID))
+	for _, row := range rowsByID {
+		rows = append(rows, row)
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].rootStart != rows[j].rootStart {
+			return rows[i].rootStart > rows[j].rootStart
 		}
-
-		return rootSpanI.StartTimeUnixNano > rootSpanJ.StartTimeUnixNano
+		return rows[i].traceID < rows[j].traceID
 	})
 
-	if limit > 0 {
-		resourceSpans = resourceSpans[:limit]
+	if limit > 0 && len(rows) > limit {
+		rows = rows[:limit]
 	}
-	// process each individual resource
-	for _, res := range resourceSpans {
-		serviceName := getAttribute(res.Resource.Attributes, "service.name")
-		for _, scopeSpan := range res.ScopeSpans {
-			if len(scopeSpan.Spans) == 0 {
-				continue
-			}
 
-			// Get the root span
-			rootSpan := scopeSpan.Spans[0]
-			for _, span := range scopeSpan.Spans {
-				if span.StartTimeUnixNano < rootSpan.StartTimeUnixNano {
-					rootSpan = span
-				}
-			}
-
-			// get trace name
-			traceName := fmt.Sprintf("%s: %s", serviceName.StringValue, rootSpan.Name)
-			startTimeInt, startErr := strconv.ParseInt(rootSpan.StartTimeUnixNano, 10, 64)
-			endTimeInt, endErr := strconv.ParseInt(rootSpan.EndTimeUnixNano, 10, 64)
-			duration := int64(0)
-			if startErr == nil && endErr == nil {
-				duration = (endTimeInt - startTimeInt) / 1000 // convert to microseconds
-			}
-
-			frame.AppendRow(
-				rootSpan.TraceID,
-				traceName,
-				time.Unix(0, startTimeInt),
-				duration,
-			)
+	for _, row := range rows {
+		duration := int64(0)
+		if end, err := strconv.ParseInt(row.root.EndTimeUnixNano, 10, 64); err == nil {
+			duration = (end - row.rootStart) / 1000 // microseconds
 		}
+		frame.AppendRow(
+			row.traceID,
+			fmt.Sprintf("%s: %s", row.serviceName, row.root.Name),
+			time.Unix(0, row.rootStart),
+			duration,
+		)
 	}
 
 	return frame
@@ -248,14 +239,10 @@ func processAttributes(attributes []types.GrpcKeyValue) []types.KeyValueType {
 			continue
 		}
 
-		if att.Value.BoolValue != "" {
-			boolVal, err := strconv.ParseBool(att.Value.BoolValue)
-			if err != nil {
-				continue
-			}
+		if att.Value.BoolValue != nil {
 			tags = append(tags, types.KeyValueType{
 				Key:   att.Key,
-				Value: boolVal,
+				Value: *att.Value.BoolValue,
 				Type:  "boolean",
 			})
 			continue
@@ -274,31 +261,25 @@ func processAttributes(attributes []types.GrpcKeyValue) []types.KeyValueType {
 			continue
 		}
 
-		if att.Value.DoubleValue != "" {
-			floatVal, err := strconv.ParseFloat(att.Value.DoubleValue, 64)
-			if err != nil {
-				continue
-			}
+		if att.Value.DoubleValue != nil {
 			tags = append(tags, types.KeyValueType{
 				Key:   att.Key,
-				Value: floatVal,
+				Value: float64(*att.Value.DoubleValue),
 				Type:  "float64",
 			})
 			continue
 		}
 
-		if len(att.Value.ArrayValue.Values) > 0 {
+		// Arrays and maps are shown as JSON strings, as the v1 API returns them
+		if len(att.Value.ArrayValue.Values) > 0 || len(att.Value.KvListValue.Values) > 0 {
+			encoded, err := json.Marshal(plainValue(att.Value))
+			if err != nil {
+				continue
+			}
 			tags = append(tags, types.KeyValueType{
 				Key:   att.Key,
-				Value: att.Value.ArrayValue.Values,
-			})
-			continue
-		}
-
-		if len(att.Value.KvListValue.Values) > 0 {
-			tags = append(tags, types.KeyValueType{
-				Key:   att.Key,
-				Value: att.Value.KvListValue.Values,
+				Value: string(encoded),
+				Type:  "string",
 			})
 			continue
 		}
@@ -313,6 +294,36 @@ func processAttributes(attributes []types.GrpcKeyValue) []types.KeyValueType {
 		}
 	}
 	return tags
+}
+
+func plainValue(v types.GrpcAnyValue) interface{} {
+	switch {
+	case v.BoolValue != nil:
+		return *v.BoolValue
+	case v.DoubleValue != nil:
+		return float64(*v.DoubleValue)
+	case v.IntValue != "":
+		if i, err := strconv.ParseInt(v.IntValue, 10, 64); err == nil {
+			return i
+		}
+		return v.IntValue
+	case len(v.ArrayValue.Values) > 0:
+		values := make([]interface{}, 0, len(v.ArrayValue.Values))
+		for _, item := range v.ArrayValue.Values {
+			values = append(values, plainValue(item))
+		}
+		return values
+	case len(v.KvListValue.Values) > 0:
+		values := make(map[string]interface{}, len(v.KvListValue.Values))
+		for _, kv := range v.KvListValue.Values {
+			values[kv.Key] = plainValue(kv.Value)
+		}
+		return values
+	case v.BytesValue != "":
+		return v.BytesValue
+	default:
+		return v.StringValue
+	}
 }
 
 func getAttribute(attributes []types.GrpcKeyValue, attName string) types.GrpcAnyValue {

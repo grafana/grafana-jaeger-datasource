@@ -1,0 +1,121 @@
+{
+  "result": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "host.cpus",
+              "value": {
+                "intValue": "8"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "v3-types"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "test"
+            },
+            "spans": [
+              {
+                "traceId": "5b8efff798038103d269b633813fc60c",
+                "spanId": "eee19b7ec3c1b174",
+                "name": "root-op",
+                "kind": 2,
+                "startTimeUnixNano": "1794236476306249000",
+                "endTimeUnixNano": "1794236476311249000",
+                "attributes": [
+                  {
+                    "key": "array.attr",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "a"
+                          },
+                          {
+                            "intValue": "2"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "bool.false",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "bool.true",
+                    "value": {
+                      "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "customer",
+                    "value": {
+                      "stringValue": "gold"
+                    }
+                  },
+                  {
+                    "key": "double.attr",
+                    "value": {
+                      "doubleValue": 3.5
+                    }
+                  },
+                  {
+                    "key": "double.zero",
+                    "value": {
+                      "doubleValue": 0
+                    }
+                  },
+                  {
+                    "key": "int.attr",
+                    "value": {
+                      "intValue": "42"
+                    }
+                  },
+                  {
+                    "key": "str.attr",
+                    "value": {
+                      "stringValue": "hello"
+                    }
+                  }
+                ],
+                "status": {
+                  "code": 1
+                }
+              },
+              {
+                "traceId": "5b8efff798038103d269b633813fc60c",
+                "spanId": "aaa19b7ec3c1b175",
+                "parentSpanId": "eee19b7ec3c1b174",
+                "name": "child-op",
+                "kind": 3,
+                "startTimeUnixNano": "1794236476307249000",
+                "endTimeUnixNano": "1794236476309249000",
+                "attributes": [
+                  {
+                    "key": "customer",
+                    "value": {
+                      "stringValue": "silver"
+                    }
+                  }
+                ],
+                "status": {}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

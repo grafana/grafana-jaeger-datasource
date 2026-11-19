@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental"
 	"github.com/grafana/grafana-jaeger-datasource/pkg/jaeger/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTransformGrpcSearchResponse(t *testing.T) {
@@ -119,7 +122,7 @@ func TestGetAttributes(t *testing.T) {
 		{
 			Key: "some-key2",
 			Value: types.GrpcAnyValue{
-				BoolValue: "true",
+				BoolValue: ptr(true),
 			},
 		},
 		{
@@ -131,7 +134,7 @@ func TestGetAttributes(t *testing.T) {
 		{
 			Key: "some-key4",
 			Value: types.GrpcAnyValue{
-				DoubleValue: "0",
+				DoubleValue: ptr(types.GrpcDouble(0.0)),
 			},
 		},
 		{
@@ -166,7 +169,7 @@ func TestGetAttributes(t *testing.T) {
 	t.Run("handles BoolValue", func(t *testing.T) {
 		actual := getAttribute(testAttributes, "some-key2")
 		assert.Equal(t, types.GrpcAnyValue{
-			BoolValue: "true",
+			BoolValue: ptr(true),
 		}, actual)
 	})
 	t.Run("handles IntValue", func(t *testing.T) {
@@ -178,7 +181,7 @@ func TestGetAttributes(t *testing.T) {
 	t.Run("handles DoubleValue", func(t *testing.T) {
 		actual := getAttribute(testAttributes, "some-key4")
 		assert.Equal(t, types.GrpcAnyValue{
-			DoubleValue: "0",
+			DoubleValue: ptr(types.GrpcDouble(0.0)),
 		}, actual)
 	})
 	t.Run("handles ArrayValue", func(t *testing.T) {
@@ -257,7 +260,7 @@ func TestTransformGrpcTraceResponse(t *testing.T) {
 									{
 										Key: "sampler.param",
 										Value: types.GrpcAnyValue{
-											DoubleValue: "100.00",
+											DoubleValue: ptr(types.GrpcDouble(100.00)),
 										},
 									},
 								},
@@ -279,7 +282,7 @@ func TestTransformGrpcTraceResponse(t *testing.T) {
 									{
 										Key: "span.kind",
 										Value: types.GrpcAnyValue{
-											DoubleValue: "client",
+											StringValue: "client",
 										},
 									},
 								},
@@ -346,13 +349,13 @@ func TestTransformGrpcTraceResponse(t *testing.T) {
 									{
 										Key: "sampler.param",
 										Value: types.GrpcAnyValue{
-											DoubleValue: "1",
+											DoubleValue: ptr(types.GrpcDouble(1.0)),
 										},
 									},
 									{
 										Key: "error",
 										Value: types.GrpcAnyValue{
-											BoolValue: "true",
+											BoolValue: ptr(true),
 										},
 									},
 									{
@@ -410,7 +413,7 @@ func TestTransformGrpcTraceResponse(t *testing.T) {
 									{
 										Key: "error",
 										Value: types.GrpcAnyValue{
-											BoolValue: "true",
+											BoolValue: ptr(true),
 										},
 									},
 									{
@@ -504,7 +507,7 @@ func TestTransformGrpcTraceResponse(t *testing.T) {
 									{
 										Key: "error",
 										Value: types.GrpcAnyValue{
-											BoolValue: "true",
+											BoolValue: ptr(true),
 										},
 									},
 								},
@@ -606,7 +609,7 @@ func TestProcessAttributes(t *testing.T) {
 			{
 				Key: "key1",
 				Value: types.GrpcAnyValue{
-					BoolValue: "true",
+					BoolValue: ptr(true),
 				},
 			},
 		}
@@ -646,7 +649,7 @@ func TestProcessAttributes(t *testing.T) {
 			{
 				Key: "key1",
 				Value: types.GrpcAnyValue{
-					DoubleValue: "100.50",
+					DoubleValue: ptr(types.GrpcDouble(100.50)),
 				},
 			},
 		}
@@ -678,12 +681,9 @@ func TestProcessAttributes(t *testing.T) {
 		}
 		expected := []types.KeyValueType{
 			{
-				Key: "key1",
-				Value: []types.GrpcAnyValue{
-					{
-						StringValue: "value1",
-					},
-				},
+				Key:   "key1",
+				Value: `["value1"]`,
+				Type:  "string",
 			},
 		}
 		actual := processAttributes(attributes)
@@ -710,15 +710,9 @@ func TestProcessAttributes(t *testing.T) {
 		}
 		expected := []types.KeyValueType{
 			{
-				Key: "key1",
-				Value: []types.GrpcKeyValue{
-					{
-						Key: "key2",
-						Value: types.GrpcAnyValue{
-							StringValue: "value2",
-						},
-					},
-				},
+				Key:   "key1",
+				Value: `{"key2":"value2"}`,
+				Type:  "string",
 			},
 		}
 		actual := processAttributes(attributes)
@@ -838,4 +832,90 @@ func TestConvertGrpcLinkToReference(t *testing.T) {
 		references := convertGrpcLinkToReference(nil)
 		assert.Empty(t, references)
 	})
+}
+
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func searchResourceSpans(service string, spans ...types.GrpcSpan) types.GrpcResourceSpans {
+	return types.GrpcResourceSpans{
+		Resource: types.GrpcResource{Attributes: []types.GrpcKeyValue{
+			{Key: "service.name", Value: types.GrpcAnyValue{StringValue: service}},
+		}},
+		ScopeSpans: []types.GrpcScopeSpans{{Spans: spans}},
+	}
+}
+
+func searchSpan(traceID, name string, startNano, endNano int64) types.GrpcSpan {
+	return types.GrpcSpan{
+		TraceID:           traceID,
+		Name:              name,
+		StartTimeUnixNano: strconv.FormatInt(startNano, 10),
+		EndTimeUnixNano:   strconv.FormatInt(endNano, 10),
+	}
+}
+
+func TestTransformGrpcSearchResponseRows(t *testing.T) {
+	t.Run("a trace across services is one row named after its earliest span", func(t *testing.T) {
+		response := types.GrpcTracesResult{ResourceSpans: []types.GrpcResourceSpans{
+			searchResourceSpans("backend", searchSpan("trace-1", "charge", 1_500_000, 2_000_000)),
+			searchResourceSpans("frontend", searchSpan("trace-1", "GET /checkout", 1_000_000, 4_000_000)),
+		}}
+		frame := TransformGrpcSearchResponse(response, "uid", "name", 0)
+		require.Equal(t, 1, frame.Rows())
+		assert.Equal(t, "trace-1", frame.Fields[0].At(0))
+		assert.Equal(t, "frontend: GET /checkout", frame.Fields[1].At(0))
+		assert.Equal(t, time.Unix(0, 1_000_000), frame.Fields[2].At(0))
+		assert.Equal(t, int64(3000), frame.Fields[3].At(0))
+	})
+
+	response := types.GrpcTracesResult{ResourceSpans: []types.GrpcResourceSpans{
+		searchResourceSpans("svc", searchSpan("old", "op", 1_000, 2_000)),
+		searchResourceSpans("svc", searchSpan("newest", "op", 3_000, 4_000)),
+		searchResourceSpans("svc", searchSpan("middle", "op", 2_000, 3_000)),
+	}}
+
+	t.Run("a limit above the number of traces keeps all of them", func(t *testing.T) {
+		frame := TransformGrpcSearchResponse(response, "uid", "name", 20)
+		assert.Equal(t, 3, frame.Rows())
+	})
+
+	t.Run("a limit keeps the newest traces", func(t *testing.T) {
+		frame := TransformGrpcSearchResponse(response, "uid", "name", 2)
+		require.Equal(t, 2, frame.Rows())
+		assert.Equal(t, "newest", frame.Fields[0].At(0))
+		assert.Equal(t, "middle", frame.Fields[0].At(1))
+	})
+
+	t.Run("resource spans without spans are skipped", func(t *testing.T) {
+		frame := TransformGrpcSearchResponse(types.GrpcTracesResult{ResourceSpans: []types.GrpcResourceSpans{
+			{ScopeSpans: []types.GrpcScopeSpans{{}}},
+			{},
+		}}, "uid", "name", 0)
+		assert.Equal(t, 0, frame.Rows())
+	})
+}
+
+func TestProcessAttributesMixedArrayMatchesV1(t *testing.T) {
+	tags := processAttributes([]types.GrpcKeyValue{
+		{Key: "array.attr", Value: types.GrpcAnyValue{ArrayValue: types.GrpcArrayValue{Values: []types.GrpcAnyValue{
+			{StringValue: "a"},
+			{IntValue: "2"},
+			{BoolValue: ptr(true)},
+			{DoubleValue: ptr(types.GrpcDouble(1.5))},
+		}}}},
+	})
+	assert.Equal(t, []types.KeyValueType{{Key: "array.attr", Value: `["a",2,true,1.5]`, Type: "string"}}, tags)
+}
+
+func TestProcessAttributesKeepsFalseAndZero(t *testing.T) {
+	tags := processAttributes([]types.GrpcKeyValue{
+		{Key: "flag", Value: types.GrpcAnyValue{BoolValue: ptr(false)}},
+		{Key: "ratio", Value: types.GrpcAnyValue{DoubleValue: ptr(types.GrpcDouble(0))}},
+	})
+	assert.Equal(t, []types.KeyValueType{
+		{Key: "flag", Value: false, Type: "boolean"},
+		{Key: "ratio", Value: float64(0), Type: "float64"},
+	}, tags)
 }

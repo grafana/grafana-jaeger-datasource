@@ -1,5 +1,12 @@
 package types
 
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"strconv"
+)
+
 // gRPC related types as defined in: https://github.com/jaegertracing/jaeger-idl/blob/main/swagger/api_v3/query_service.swagger.json
 
 type GrpcServicesResponse struct {
@@ -104,14 +111,16 @@ type GrpcKeyValue struct {
 	Value GrpcAnyValue `json:"value"`
 }
 
+// Protobuf JSON encodes bool and double as JSON booleans and numbers; pointers keep
+// false and 0 distinguishable from an absent value. int64 is encoded as a string.
 type GrpcAnyValue struct {
-	StringValue string         `json:"stringValue"`
-	BoolValue   string         `json:"boolValue"`
-	IntValue    string         `json:"intValue"`
-	DoubleValue string         `json:"doubleValue"`
-	ArrayValue  GrpcArrayValue `json:"array_value"`
+	StringValue string         `json:"stringValue,omitempty"`
+	BoolValue   *bool          `json:"boolValue,omitempty"`
+	IntValue    string         `json:"intValue,omitempty"`
+	DoubleValue *GrpcDouble    `json:"doubleValue,omitempty"`
+	ArrayValue  GrpcArrayValue `json:"arrayValue"`
 	KvListValue KeyValueList   `json:"kvlistValue"`
-	BytesValue  string         `json:"bytesValue"`
+	BytesValue  string         `json:"bytesValue,omitempty"`
 }
 
 type GrpcArrayValue struct {
@@ -120,4 +129,35 @@ type GrpcArrayValue struct {
 
 type KeyValueList struct {
 	Values []GrpcKeyValue `json:"values"`
+}
+
+// GrpcDouble is a protobuf JSON double: a JSON number, or a string for NaN, Infinity,
+// -Infinity and quoted numbers.
+type GrpcDouble float64
+
+func (d *GrpcDouble) UnmarshalJSON(b []byte) error {
+	var f float64
+	if err := json.Unmarshal(b, &f); err == nil {
+		*d = GrpcDouble(f)
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("doubleValue is neither a number nor a string: %s", b)
+	}
+	switch s {
+	case "NaN":
+		f = math.NaN()
+	case "Infinity":
+		f = math.Inf(1)
+	case "-Infinity":
+		f = math.Inf(-1)
+	default:
+		var err error
+		if f, err = strconv.ParseFloat(s, 64); err != nil {
+			return fmt.Errorf("invalid doubleValue %q: %w", s, err)
+		}
+	}
+	*d = GrpcDouble(f)
+	return nil
 }

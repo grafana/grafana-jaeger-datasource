@@ -115,8 +115,6 @@ func (j *JaegerClient) GrpcOperations(ctx context.Context, s string) ([]string, 
 	return operations, nil
 }
 
-// Note that this and all functionality around search is not yet being used. Once Jaeger adds support for attributes and limit parameters
-// we will be able to start using this and routing traffic to the new API based on the feature flag.
 func (j *JaegerClient) GrpcSearch(ctx context.Context, query *JaegerQuery, start, end time.Time) (*data.Frame, error) {
 	u, err := url.JoinPath(j.url, "/api/v3/traces")
 	if err != nil {
@@ -151,12 +149,15 @@ func (j *JaegerClient) GrpcSearch(ctx context.Context, query *JaegerQuery, start
 	queryParams := map[string]string{
 		"query.service_name":   query.Service,
 		"query.operation_name": query.Operation,
-		"query.attributes":     queryTags, // TODO: no native support of attributes/tags figure out if we want to do it in post processing.
+		"query.attributes":     queryTags,
 		"query.duration_min":   query.MinDuration,
 		"query.duration_max":   query.MaxDuration,
 	}
 
 	urlQuery := jaegerURL.Query()
+	if query.Limit > 0 {
+		urlQuery.Set("query.num_traces", fmt.Sprintf("%d", query.Limit))
+	}
 
 	for key, value := range queryParams {
 		if value != "" {
@@ -181,7 +182,19 @@ func (j *JaegerClient) GrpcSearch(ctx context.Context, query *JaegerQuery, start
 		}
 	}()
 
-	if resp != nil && resp.StatusCode != http.StatusOK {
+	body, err := readResponseBody(resp)
+	if err != nil {
+		return nil, err
+	}
+	var response types.GrpcTracesResponse
+	// for search call, an unsuccessful response is exposed through the error attribute
+	// see https://github.com/jaegertracing/jaeger-idl/blob/7c7460fc400325ae69435c0aa65697f4cc1ab581/swagger/api_v3/query_service.swagger.json#L77C17-L79C18
+	// A search with no matches is an HTTP 404 with that error, not an empty result.
+	if jsonErr := json.Unmarshal(body, &response); jsonErr == nil && response.Error.HttpCode == http.StatusNotFound {
+		return utils.TransformGrpcSearchResponse(types.GrpcTracesResult{}, j.settings.UID, j.settings.Name, query.Limit), nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("request failed: %s", resp.Status)
 		if backend.ErrorSourceFromHTTPStatus(resp.StatusCode) == backend.ErrorSourceDownstream {
 			return nil, backend.DownstreamError(err)
@@ -189,17 +202,10 @@ func (j *JaegerClient) GrpcSearch(ctx context.Context, query *JaegerQuery, start
 		return nil, err
 	}
 
-	body, err := readResponseBody(resp)
-	if err != nil {
-		return nil, err
-	}
-	var response types.GrpcTracesResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, backend.DownstreamErrorf("failed to unmarshal Jaeger response: %w", err)
 	}
 
-	// for search call, an unsuccessful response is exposed through the error attribute
-	// see https://github.com/jaegertracing/jaeger-idl/blob/7c7460fc400325ae69435c0aa65697f4cc1ab581/swagger/api_v3/query_service.swagger.json#L77C17-L79C18
 	if response.Error.HttpCode != 0 && response.Error.HttpCode != http.StatusOK {
 		err := fmt.Errorf("request failed %s", response.Error.Message)
 		if backend.ErrorSourceFromHTTPStatus(response.Error.HttpCode) == backend.ErrorSourceDownstream {

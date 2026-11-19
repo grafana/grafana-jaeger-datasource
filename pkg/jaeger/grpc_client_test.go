@@ -400,3 +400,75 @@ func TestJaegerGrpcClient_Operations(t *testing.T) {
 		})
 	}
 }
+
+func TestJaegerGrpcClient_Search(t *testing.T) {
+	start := time.Date(2026, 11, 9, 10, 0, 0, 0, time.UTC)
+	end := start.Add(time.Hour)
+
+	t.Run("sends service, limit and attributes", func(t *testing.T) {
+		var got *http.Request
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			got = r
+			_, _ = w.Write([]byte(`{"result":{"resourceSpans":[]}}`))
+		}))
+		defer server.Close()
+		client, err := New(server.Client(), log.NewNullLogger(), backend.DataSourceInstanceSettings{URL: server.URL})
+		require.NoError(t, err)
+
+		_, err = client.GrpcSearch(context.Background(), &JaegerQuery{
+			Service:   "checkout",
+			Operation: "GET /cart",
+			Tags:      "customer=gold",
+			Limit:     20,
+		}, start, end)
+		require.NoError(t, err)
+
+		require.NotNil(t, got)
+		assert.Equal(t, "/api/v3/traces", got.URL.Path)
+		q := got.URL.Query()
+		assert.Equal(t, "checkout", q.Get("query.service_name"))
+		assert.Equal(t, "GET /cart", q.Get("query.operation_name"))
+		assert.Equal(t, "20", q.Get("query.num_traces"))
+		assert.JSONEq(t, `{"customer":"gold"}`, q.Get("query.attributes"))
+		assert.Equal(t, start.Format(time.RFC3339Nano), q.Get("query.start_time_min"))
+		assert.Equal(t, end.Format(time.RFC3339Nano), q.Get("query.start_time_max"))
+	})
+
+	t.Run("no matching traces is an empty result, not an error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error":{"httpCode":404,"message":"No traces found"}}`))
+		}))
+		defer server.Close()
+		client, err := New(server.Client(), log.NewNullLogger(), backend.DataSourceInstanceSettings{URL: server.URL})
+		require.NoError(t, err)
+
+		frame, err := client.GrpcSearch(context.Background(), &JaegerQuery{Service: "checkout"}, start, end)
+		require.NoError(t, err)
+		assert.Equal(t, 0, frame.Rows())
+	})
+
+	t.Run("a 404 without Jaeger's error body is an error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		}))
+		defer server.Close()
+		client, err := New(server.Client(), log.NewNullLogger(), backend.DataSourceInstanceSettings{URL: server.URL})
+		require.NoError(t, err)
+
+		_, err = client.GrpcSearch(context.Background(), &JaegerQuery{Service: "checkout"}, start, end)
+		assert.Error(t, err)
+	})
+
+	t.Run("other errors are returned", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(`{"error":{"httpCode":500,"message":"storage unavailable"}}`))
+		}))
+		defer server.Close()
+		client, err := New(server.Client(), log.NewNullLogger(), backend.DataSourceInstanceSettings{URL: server.URL})
+		require.NoError(t, err)
+
+		_, err = client.GrpcSearch(context.Background(), &JaegerQuery{Service: "checkout"}, start, end)
+		assert.ErrorContains(t, err, "storage unavailable")
+	})
+}
