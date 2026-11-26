@@ -1,0 +1,214 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/dsconfig/refs/tags/dsconfig/v0.0.13/dsconfig/schema.json",
+  "schemaVersion": "v1",
+  "pluginType": "jaeger",
+  "pluginName": "Jaeger",
+  "docURL": "https://grafana.com/docs/grafana/latest/datasources/jaeger/",
+  "baseFields": [
+    {
+      "from": "plugin_sdk_settings",
+      "exclude": [
+        "plugin_sdk_settings.access",
+        "plugin_sdk_settings.withCredentials",
+        "plugin_sdk_settings.sigV4Auth"
+      ],
+      "patch": {
+        "plugin_sdk_settings.url": {
+          "placeholder": "http://localhost:16686"
+        }
+      }
+    }
+  ],
+  "fields": [
+    {
+      "id": "virtual_authMethod",
+      "key": "authMethod",
+      "label": "Authentication method",
+      "description": "Choose an authentication method to access the data source.",
+      "valueType": "string",
+      "kind": "virtual",
+      "defaultValue": "NoAuth",
+      "validations": [
+        {
+          "type": "allowedValues",
+          "values": ["BasicAuth", "OAuthForward", "NoAuth"]
+        }
+      ],
+      "ui": {
+        "component": "select",
+        "options": [
+          { "label": "Basic authentication", "value": "BasicAuth" },
+          { "label": "Forward OAuth Identity", "value": "OAuthForward" },
+          { "label": "No Authentication", "value": "NoAuth" }
+        ]
+      },
+      "storage": {
+        "type": "computed",
+        "read": "root.basicAuth == true ? 'BasicAuth' : (jsonData.oauthPassThru == true ? 'OAuthForward' : 'NoAuth')"
+      },
+      "effects": [
+        {
+          "when": "value == 'BasicAuth'",
+          "set": {
+            "plugin_sdk_settings.basicAuth": true,
+            "plugin_sdk_settings.oauthPassThru": false
+          }
+        },
+        {
+          "when": "value == 'OAuthForward'",
+          "set": {
+            "plugin_sdk_settings.basicAuth": false,
+            "plugin_sdk_settings.oauthPassThru": true
+          }
+        },
+        {
+          "when": "value == 'NoAuth'",
+          "set": {
+            "plugin_sdk_settings.basicAuth": false,
+            "plugin_sdk_settings.oauthPassThru": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "jsonData_enableSecureSocksProxy",
+      "key": "enableSecureSocksProxy",
+      "label": "Secure Socks Proxy",
+      "description": "Connect through the Grafana private data source connect proxy. The editor only offers it when the Grafana instance enables the proxy.",
+      "valueType": "boolean",
+      "target": "jsonData",
+      "defaultValue": false,
+      "ui": { "component": "switch" }
+    },
+    {
+      "id": "jsonData_tracesToLogsV2",
+      "key": "tracesToLogsV2",
+      "label": "Trace to logs",
+      "description": "Frontend-only. Links a span to the selected logs data source (datasourceUid, tags, spanStartTimeShift, spanEndTimeShift, filterByTraceID, filterBySpanID, query, customQuery).",
+      "valueType": "object",
+      "target": "jsonData",
+      "tags": ["frontend-only"]
+    },
+    {
+      "id": "jsonData_tracesToLogs",
+      "key": "tracesToLogs",
+      "description": "Frontend-only legacy shape of tracesToLogsV2. Migrated on read and cleared when tracesToLogsV2 is saved.",
+      "valueType": "object",
+      "target": "jsonData",
+      "tags": ["frontend-only", "legacy"]
+    },
+    {
+      "id": "jsonData_tracesToMetrics",
+      "key": "tracesToMetrics",
+      "label": "Trace to metrics",
+      "description": "Frontend-only. Links a span to the selected metrics data source (datasourceUid, tags, queries, spanStartTimeShift, spanEndTimeShift).",
+      "valueType": "object",
+      "target": "jsonData",
+      "tags": ["frontend-only"]
+    },
+    {
+      "id": "jsonData_nodeGraph",
+      "key": "nodeGraph",
+      "label": "Node graph",
+      "description": "Frontend-only. Shows the node graph above the trace view when `enabled` is true.",
+      "valueType": "object",
+      "target": "jsonData",
+      "tags": ["frontend-only"]
+    },
+    {
+      "id": "jsonData_spanBar",
+      "key": "spanBar",
+      "label": "Span bar",
+      "description": "Frontend-only. Extra label on span rows: `type` is None, Duration or Tag; `tag` names the tag shown when `type` is Tag.",
+      "valueType": "object",
+      "target": "jsonData",
+      "tags": ["frontend-only"]
+    },
+    {
+      "id": "jsonData_traceIdTimeParams",
+      "key": "traceIdTimeParams",
+      "label": "Query Trace by ID with Time Params",
+      "description": "When `enabled` is true, trace-by-ID requests include the query time range as start and end parameters.",
+      "valueType": "object",
+      "target": "jsonData"
+    }
+  ],
+  "groups": [
+    {
+      "id": "connection",
+      "title": "Connection",
+      "order": 1,
+      "fieldRefs": ["plugin_sdk_settings.url"]
+    },
+    {
+      "id": "authentication",
+      "title": "Authentication",
+      "order": 2,
+      "fieldRefs": [
+        "virtual_authMethod",
+        "plugin_sdk_settings.basicAuth",
+        "plugin_sdk_settings.basicAuthUser",
+        "plugin_sdk_settings.basicAuthPassword",
+        "plugin_sdk_settings.oauthPassThru"
+      ]
+    },
+    {
+      "id": "tls-settings",
+      "title": "TLS settings",
+      "order": 3,
+      "optional": true,
+      "fieldRefs": [
+        "plugin_sdk_settings.tlsAuthWithCACert",
+        "plugin_sdk_settings.tlsCACert",
+        "plugin_sdk_settings.tlsAuth",
+        "plugin_sdk_settings.serverName",
+        "plugin_sdk_settings.tlsClientCert",
+        "plugin_sdk_settings.tlsClientKey",
+        "plugin_sdk_settings.tlsSkipVerify"
+      ]
+    },
+    {
+      "id": "trace-to-logs",
+      "title": "Trace to logs",
+      "order": 4,
+      "optional": true,
+      "fieldRefs": ["jsonData_tracesToLogsV2", "jsonData_tracesToLogs"]
+    },
+    {
+      "id": "trace-to-metrics",
+      "title": "Trace to metrics",
+      "order": 5,
+      "optional": true,
+      "fieldRefs": ["jsonData_tracesToMetrics"]
+    },
+    {
+      "id": "additional-settings",
+      "title": "Additional settings",
+      "description": "Optional settings for more control over the data source.",
+      "order": 6,
+      "optional": true,
+      "fieldRefs": [
+        "plugin_sdk_settings.keepCookies",
+        "plugin_sdk_settings.timeout",
+        "plugin_sdk_settings.httpHeaders",
+        "jsonData_enableSecureSocksProxy",
+        "jsonData_nodeGraph",
+        "jsonData_spanBar",
+        "jsonData_traceIdTimeParams"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "group",
+      "fields": ["jsonData_tracesToLogsV2", "jsonData_tracesToLogs"],
+      "description": "tracesToLogs is legacy; write tracesToLogsV2 instead."
+    }
+  ],
+  "instructions": [
+    {
+      "msg": "Supports one authentication method at a time, chosen by `authMethod`: `BasicAuth` (`basicAuth`, `basicAuthUser`, `basicAuthPassword`), `OAuthForward` (`oauthPassThru`) or `NoAuth`. The editor writes both flags on every selection so only one is true.",
+      "tags": ["llm", "auth"]
+    }
+  ]
+}

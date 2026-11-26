@@ -54,6 +54,39 @@ This project adheres to the [Grafana Code of Conduct](https://github.com/grafana
    mage -v
    ```
 
+2. Run backend tests:
+
+   ```shell
+   go test ./pkg/...
+   ```
+
+## Data Source Configuration Schema
+
+[`pkg/schema/dsconfig.json`](pkg/schema/dsconfig.json) is the single source of truth for this data source's configuration (`root`, `jsonData` and `secureJsonData`). Provisioning, docs and automation consume it. See the [dsconfig README](https://github.com/grafana/dsconfig/tree/main/dsconfig), the [property reference](https://github.com/grafana/dsconfig/blob/main/dsconfig/schema.md) and the [JSON Schema](https://github.com/grafana/dsconfig/blob/main/dsconfig/schema.json).
+
+The `$schema` URL is pinned to a dsconfig release. It must always match the `github.com/grafana/dsconfig/dsconfig` version in `go.mod`; bump them together.
+
+### Layout
+
+| File | Purpose |
+| --- | --- |
+| `pkg/schema/dsconfig.json` | The schema. Edit this. |
+| `pkg/schema/dsconfig_test.go` | Conformance wiring, `SecureKeys` and the test-only settings model. |
+| `pkg/schema/*.gen.json` | Generated. Never hand-edit. The build copies them into `dist/schema/`. |
+
+### Adding a new settings option
+
+1. Declare the field in `dsconfig.json` under `fields` and add its id to `groups[].fieldRefs`. Ids follow `<target>_<key>`.
+2. Add the matching field, with a json tag equal to the schema `key`, to the settings model in `dsconfig_test.go`. Parity is enforced both ways. Secrets are the exception: add the key to `SecureKeys` instead.
+3. Run `go generate ./pkg/schema/...` and commit the regenerated `.gen.json` files.
+4. Run `go test ./pkg/schema/...`.
+
+### When the conformance suite fails
+
+- `SchemaArtifactInSync`: the `.gen.json` files are stale. Run `go generate ./pkg/schema/...`.
+- `JSONDataMatchesStruct` / `JSONDataTypesMatchStruct`: a `jsonData` key or its type differs between the schema and the settings model. Fix whichever side is wrong.
+- `SecureValuesMatchLoadSettings`: a `secureJsonData` key is missing from `SecureKeys` or the schema. Make them match.
+
 ## Local development environment
 
 `npm run server` starts a local Jaeger instance and a Grafana instance with the plugin pre-provisioned:
@@ -78,6 +111,10 @@ npx playwright install --with-deps
 npm run server
 npm run e2e
 ```
+
+## Checklist
+
+- If you touched data source settings, run `go generate ./pkg/schema/...` and commit the regenerated `.gen.json` artifacts.
 
 ## Release
 
